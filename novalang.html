@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>NovaLang v2</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: monospace;
+      padding: 20px;
+    }
+    textarea, pre {
+      width: 100%;
+      background: #222;
+      color: #0f0;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    button {
+      background: #0f0;
+      border: none;
+      padding: 10px 20px;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    h1 {
+      color: #0f0;
+    }
+  </style>
+</head>
+<body>
+  <h1>NovaLang v2</h1>
+  <textarea id="code" rows="16">
+// Teste completo da NovaLang
+func saudacao(nome) {
+  print("Olá, " + nome)
+}
+
+let nome = "Roberto"
+saudacao(nome)
+
+if (nome == "Roberto") {
+  print("Você é bem-vindo!")
+}
+
+loop (3) {
+  print("Loopando!")
+}
+  </textarea>
+  <button onclick="interpretar()">Executar</button>
+  <h2>Saída:</h2>
+  <pre id="output"></pre>
+
+  <script>
+    function interpretar() {
+      const input = document.getElementById('code').value;
+      const linhas = input.split('\n');
+      let i = 0;
+      let output = '';
+      const vars = {};
+      const funcs = {};
+
+      function log(texto) {
+        output += texto + '\n';
+      }
+
+      function avaliar(expr) {
+        return Function(...Object.keys(vars), 'return ' + expr)(...Object.values(vars));
+      }
+
+      function lerBloco(inicio) {
+        const bloco = [];
+        let contador = 0;
+        while (i < linhas.length) {
+          const linha = linhas[i].trim();
+          if (linha.endsWith('{')) contador++;
+          if (linha === '}') {
+            contador--;
+            if (contador === 0) break;
+          }
+          bloco.push(linhas[i]);
+          i++;
+        }
+        return bloco.slice(1); // remove linha do 'if {' ou 'loop {'
+      }
+
+      while (i < linhas.length) {
+        let linha = linhas[i].trim();
+        if (linha === '' || linha.startsWith('//')) {
+          i++;
+          continue;
+        }
+
+        // Função
+        if (linha.startsWith('func ')) {
+          const match = linha.match(/func (\w+)\((.*?)\) \{/);
+          if (match) {
+            const nome = match[1];
+            const params = match[2].split(',').map(p => p.trim());
+            const corpo = lerBloco(i);
+            funcs[nome] = { params, corpo };
+          }
+        }
+
+        // print
+        else if (linha.startsWith('print(')) {
+          const conteudo = linha.slice(6, -1);
+          try {
+            log(avaliar(conteudo));
+          } catch (e) {
+            log('Erro em print: ' + e.message);
+          }
+        }
+
+        // Variável
+        else if (linha.startsWith('let ')) {
+          const match = linha.match(/let (\w+)\s*=\s*(.*)/);
+          if (match) {
+            vars[match[1]] = avaliar(match[2]);
+          }
+        }
+
+        // if
+        else if (linha.startsWith('if (')) {
+          const cond = linha.slice(3, linha.indexOf(')') + 1);
+          const expr = cond.slice(1, -1);
+          const bloco = lerBloco(i);
+          if (avaliar(expr)) {
+            for (let cmd of bloco) {
+              linhas.splice(i + 1, 0, cmd); // injeta no código
+            }
+          }
+        }
+
+        // loop
+        else if (linha.startsWith('loop (')) {
+          const count = parseInt(linha.slice(6, linha.indexOf(')')));
+          const bloco = lerBloco(i);
+          for (let j = 0; j < count; j++) {
+            for (let cmd of bloco) {
+              linhas.splice(i + 1, 0, cmd); // injeta no código
+            }
+          }
+        }
+
+        // chamada de função
+        else if (/^\w+\(.*\)$/.test(linha)) {
+          const nomeFunc = linha.slice(0, linha.indexOf('('));
+          const args = linha.slice(linha.indexOf('(') + 1, -1).split(',').map(a => a.trim());
+          const fn = funcs[nomeFunc];
+          if (fn) {
+            const scope = {};
+            fn.params.forEach((p, idx) => {
+              scope[p] = avaliar(args[idx]);
+            });
+            for (let cmd of fn.corpo) {
+              const linhaFunc = cmd.trim();
+              if (linhaFunc.startsWith('print(')) {
+                const conteudo = linhaFunc.slice(6, -1);
+                log(Function(...Object.keys(scope), 'return ' + conteudo)(...Object.values(scope)));
+              }
+            }
+          } else {
+            log('Função "' + nomeFunc + '" não encontrada.');
+          }
+        }
+
+        // comando não reconhecido
+        else {
+          log('Comando não reconhecido: ' + linha);
+        }
+
+        i++;
+      }
+
+      document.getElementById('output').textContent = output;
+    }
+  </script>
+</body>
+</html>
