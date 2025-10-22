@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>NovaLang v5</title>
+  <style>
+    :root {
+      --bg-color: #1e1e1e;
+      --text-color: #d4d4d4;
+      --primary-color: #4ec9b0; /* Teal para keywords */
+      --secondary-color: #c586c0; /* Roxo para if/loop */
+      --function-color: #dcdcaa; /* Amarelo para funções */
+      --string-color: #ce9178; /* Laranja para strings */
+      --number-color: #b5cea8; /* Verde claro para números */
+      --comment-color: #6a9955; /* Verde escuro para comentários */
+      --error-color: #f44747;
+      --cursor-color: #aeafad;
+      --border-color: #444;
+    }
+
+    body {
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-top: 0;
+    }
+
+    .main-container {
+      display: flex;
+      gap: 20px;
+      flex-grow: 1;
+      min-height: 0; /* Fix for flexbox overflow */
+    }
+    
+    .editor-column, .output-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-wrapper {
+      position: relative;
+      flex-grow: 1;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    #code, #highlighting-layer {
+      margin: 0;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      letter-spacing: 0.5px;
+      white-space: pre;
+      overflow-wrap: normal;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      overflow: auto;
+    }
+
+    #code {
+      z-index: 1;
+      color: transparent;
+      background: transparent;
+      caret-color: var(--cursor-color);
+      resize: none;
+    }
+
+    #highlighting-layer {
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Colorização de Sintaxe */
+    .hl-keyword { color: var(--secondary-color); font-weight: bold; }
+    .hl-let { color: var(--primary-color); }
+    .hl-function-call { color: var(--function-color); }
+    .hl-string { color: var(--string-color); }
+    .hl-number { color: var(--number-color); }
+    .hl-comment { color: var(--comment-color); font-style: italic; }
+
+    /* Autocomplete */
+    #autocomplete {
+      display: none;
+      position: absolute;
+      background: #252526;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      width: 200px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 14px;
+      z-index: 100;
+    }
+    #autocomplete div {
+      padding: 5px 10px;
+      cursor: pointer;
+      color: var(--text-color);
+    }
+    #autocomplete div:hover,
+    #autocomplete .selected {
+      background: #094771;
+    }
+
+    button {
+      background: var(--primary-color);
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      color: var(--bg-color);
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background: #62dcc0;
+    }
+
+    #output {
+      background: #000;
+      color: #ccc;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      white-space: pre-wrap;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+    .output-ok { color: #0f0; }
+    .output-error { color: var(--error-color); font-weight: bold; }
+    
+    #cursor-helper {
+        position: absolute;
+        visibility: hidden;
+        white-space: pre-wrap;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>NovaLang v5</h1>
+  <div class="main-container">
+    <div class="editor-column">
+      <button onclick="runInterpreter()">Executar</button>
+      <div class="editor-wrapper">
+        <div id="highlighting-layer"></div>
+        <textarea id="code" spellcheck="false" oninput="onCodeInput()" onscroll="onCodeScroll()" onkeydown="onCodeKeyDown()">
+// NovaLang v5 - Demonstração de novas features
+
+// 1. Condicionais completas (if/else if/else) e operadores lógicos
+let idade = 18
+let tem_carteira = true
+if (idade >= 18 and tem_carteira) {
+    print("Pode dirigir.")
+}
+else if (idade >= 18 and not tem_carteira) {
+    print("Maior de idade, mas sem carteira.")
+}
+else if (idade < 18 and tem_carteira) {
+    print("Erro: impossível ser menor de idade e ter carteira.")
+}
+else {
+    print("Menor de idade.")
+}
+
+// 2. Loops (while, for in, repeat until) e controle de fluxo
+print("\n--- Testando Loops ---")
+let i = 10
+while i > 3:
+    print("while: " + i)
+    i = i - 1
+
+let contador = 5
+repeat {
+    print("repeat: Contagem regressiva: " + contador)
+    contador = contador - 1
+}
+until (contador < 0)
+
+// 3. Coleções (Listas e Dicionários)
+print("\n--- Testando Coleções ---")
+let pessoa = {nome: "Carlos", idade: 30, profissao: "Desenvolvedor"}
+
+print("Pessoa: " + pessoa.nome + ", " + pessoa.idade + " anos.")
+
+// 4. Entrada de dados (descomente para testar)
+// let nome_usuario = input("Qual é o seu nome?")
+// if (nome_usuario and nome_usuario != "null") {
+// print("Olá, " + nome_usuario + "!")
+// }
+// else {
+// print("Você cancelou a entrada.")
+// }
+
+
+// 5. Tratamento de Erros
+print("\n--- Testando Tratamento de Erros ---")
+try {
+    print("Tentando dividir 10 por 0...")
+    let resultado = 10 / 0
+    print("Isso não será impresso.")
+}
+catch {
+    print("Erro capturado! Divisão por zero não é permitida.")
+}
+finally {
+    print("Bloco 'finally' executado, com ou sem erro.")
+}
+        </textarea>
+        <div id="autocomplete"></div>
+        <div id="cursor-helper"></div>
+      </div>
+    </div>
+    <div class="output-column">
+      <h2>Saída:</h2>
+      <pre id="output"></pre>
+    </div>
+  </div>
+
+  <script>
+    // =======================================================
+    // ⚙️ NÚCLEO DO INTERPRETADOR (LÓGICA PURA)
+    // =======================================================
+    class Interpreter {
+      constructor() {
+        this.vars = { 'PI': Math.PI };
+        this.funcs = {};
+        this.output = '';
+        this.returnValue = null;
+        this.loopState = null; // 'break' ou 'continue'
+      }
+
+      log(text, type = 'ok') {
+        const cleanedText = String(text).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const className = type === 'error' ? 'output-error' : 'output-ok';
+        this.output += `<span class="${className}">${cleanedText}</span>\n`;
+      }
+
+      evaluateExpression(expr, scope = {}) {
+        const localVars = { ...this.vars, ...scope };
+        try {
+          // converte sintaxe da NovaLang pra JS
+          expr = String(expr).trim()
+            .replace(/\bnot\b/g, '!')
+            .replace(/\band\b/g, '&&')
+            .replace(/\bor\b/g, '||')
+            .replace(/sqrt\s+([0-9.-]+|\w+)/g, 'Math.sqrt($1)')
+            .replace(/(\d+)!/g, (_, n) => { let r=1; for(let i=2; i<=parseInt(n); i++) r*=i; return r; })
+            .replace(/\^/g, '**')
+            .replace(/(abs|round|floor|ceil|sin|cos|tan)\s*\((.*?)\)/g, 'Math.$1($2)')
+            .replace(/(?<![=<>!])=(?!=)/g, '==')
+            // converte dicionários {chave: valor} para JSON {"chave": valor}
+            .replace(/\{\s*(\w+)\s*:/g, '{"$1":')
+            .replace(/,\s*(\w+)\s*:/g, ',"$1":');
+            
+          const varNames = Object.keys(localVars);
+          const varValues = Object.values(localVars);
+          // usa JSON.parse para lidar com as listas e os dicionários
+          if ((expr.startsWith('[') && expr.endsWith(']')) || (expr.startsWith('{') && expr.endsWith('}'))) {
+             const tempFunc = new Function(...varNames, `return JSON.stringify(${expr})`);
+             return JSON.parse(tempFunc(...varValues));
+          }
+
+          const func = new Function(...varNames, `return ${expr}`);
+          return func(...varValues);
+        } catch (e) {
+            throw new Error(`Erro ao avaliar a expressão "${expr}": ${e.message}`);
+        }
+      }
+      
+      _executeFunctionCall(name, argsStr, scope = {}) {
+          if (name === 'input') {
+              const promptMsg = argsStr ? this.evaluateExpression(argsStr, scope) : "";
+              return prompt(promptMsg);
+          }
+          
+          const fn = this.funcs[name];
+          if (!fn) throw new Error(`Função '${name}' não foi definida.`);
+          
+          const args = argsStr ? argsStr.split(',').map(a => this.evaluateExpression(a.trim(), scope)) : [];
+          if (fn.params.length !== args.length) {
+              throw new Error(`Função '${name}' espera ${fn.params.length} argumentos, mas recebeu ${args.length}.`);
+          }
+          
+          const funcScope = {};
+          fn.params.forEach((param, index) => { funcScope[param] = args[index]; });
+
+          const funcInterpreter = new Interpreter();
+          funcInterpreter.vars = { ...this.vars, ...scope, ...funcScope };
+          funcInterpreter.funcs = { ...this.funcs };
+          funcInterpreter.run(fn.body.join('\n'));
+          
+          this.output += funcInterpreter.output;
+          return funcInterpreter.returnValue;
+      }
+
+      readBlock(lines, startIndex) {
+        let line = lines[startIndex].trim();
+        let blockStartIndex = startIndex;
+        
+        if (!line.endsWith('{')) { // para repeat...until
+            blockStartIndex = startIndex - 1; 
+        }
+
+        const block = [];
+        let openBraces = 0;
+        
+        let i = blockStartIndex;
+        // encontra o início do bloco
+        while(i < lines.length && !lines[i].includes('{')) i++;
+        if (i < lines.length && lines[i].includes('{')) openBraces++;
+
+        i++; // começa a ler a partir da linha seguinte ao '{'
+        
+        while (i < lines.length) {
+          line = lines[i];
+          if (line.includes('{')) openBraces++;
+          if (line.includes('}')) openBraces--;
+          if (openBraces === 0) {
+            return { block, endIndex: i };
+          }
+          block.push(lines[i]);
+          i++;
+        }
+        throw new Error("Bloco de código não foi fechado. Esperado '}' correspondente.");
+      }
+      
+      _executeBlock(block, scope = {}) {
+          const tempInterpreter = new Interpreter();
+          tempInterpreter.vars = { ...this.vars, ...scope };
+          tempInterpreter.funcs = { ...this.funcs };
+          tempInterpreter.run(block.join('\n'));
+          
+          // propaga o estado para o interpretador pai
+          this.output += tempInterpreter.output;
+          Object.assign(this.vars, tempInterpreter.vars); // atualiza variaveis
+          if (tempInterpreter.loopState) {
+              this.loopState = tempInterpreter.loopState;
+          }
+      }
+
+      run(code) {
+        const lines = code.split('\n');
+        let i = 0;
+        while (i < lines.length) {
+            const currentLineIndex = i;
+            let line = lines[i].trim();
+
+            if (line === '' || line.startsWith('//')) {
+                i++;
+                continue;
+            }
+
+            try {
+                if (this.loopState === 'break' || this.loopState === 'continue') break;
+
+                // controle de fluxo de loops
+                if (line === 'break') { this.loopState = 'break'; break; }
+                if (line === 'continue') { this.loopState = 'continue'; break; }
+
+                // definição de função
+                if (line.startsWith('func ')) {
+                    const match = line.match(/func\s+(\w+)\s*\((.*?)\)\s*\{/);
+                    if (!match) throw new Error("Sintaxe de função inválida.");
+                    const [, name, paramsStr] = match;
+                    const params = paramsStr ? paramsStr.split(',').map(p => p.trim()) : [];
+                    const { block, endIndex } = this.readBlock(lines, i);
+                    this.funcs[name] = { params, body: block };
+                    i = endIndex + 1;
+                }
+                
+                // variáveis
+                else if (line.startsWith('let ')) {
+                    const match = line.match(/let\s+(\w+)\s*=\s*(.*)/);
+                    if (!match) throw new Error("Sintaxe de variável inválida.");
+                    const [, name, expr] = match;
+                    
+                    const funcCallMatch = expr.match(/^(\w+)\s*\((.*)\)\s*$/);
+                    if (funcCallMatch && (this.funcs[funcCallMatch[1]] || funcCallMatch[1] === 'input')) {
+                        this.vars[name] = this._executeFunctionCall(funcCallMatch[1], funcCallMatch[2]);
+                    } else {
+                        this.vars[name] = this.evaluateExpression(expr);
+                    }
+                    i++;
+                }
+
+                // print()
+                else if (line.startsWith('print(')) {
+                    if (!line.endsWith(')')) throw new Error("Comando 'print' incompleto.");
+                    const expr = line.slice(6, -1);
+                    this.log(this.evaluateExpression(expr));
+                    i++;
+                }
+
+                // condicionais (if/else if/else)
+                else if (line.startsWith('if')) {
+                    let conditionMet = false;
+                    let currentIndex = i;
+                    
+                    while(currentIndex < lines.length) {
+                        let currentLine = lines[currentIndex].trim();
+                        let isIf = currentLine.startsWith('if');
+                        let isElseIf = currentLine.startsWith('else if');
+                        let isElse = currentLine.startsWith('else');
+
+                        if (!isIf && !isElseIf && !isElse) break;
+                        
+                        const { block, endIndex } = this.readBlock(lines, currentIndex);
+
+                        if (conditionMet) {
+                            currentIndex = endIndex + 1;
+                            continue;
+                        }
+
+                        if (isIf || isElseIf) {
+                            const conditionMatch = currentLine.match(/(if|else if)\s*\((.*?)\)\s*\{/);
+                            if (!conditionMatch) throw new Error("Sintaxe condicional inválida.");
+                            const condition = this.evaluateExpression(conditionMatch[2]);
+                            if (condition) {
+                                conditionMet = true;
+                                this._executeBlock(block);
+                                if (this.loopState) break;
+                            }
+                        } else if (isElse) {
+                           this._executeBlock(block);
+                           if (this.loopState) break;
+                        }
+                        currentIndex = endIndex + 1;
+                    }
+                    i = currentIndex;
+                }
+                
+                // loop while
+                else if (line.startsWith('while')) {
+                    const match = line.match(/while\s+(.*?)\s*:/);
+                    if (!match) throw new Error("Sintaxe de 'while' inválida. Use: while condicao:");
+                    const conditionExpr = match[1];
+                    const loopStartIndex = i + 1;
+                    const blockBody = [];
+                    // simple block read until indentation changes
+                    let blockEndIndex = loopStartIndex;
+                    while(blockEndIndex < lines.length && (lines[blockEndIndex].startsWith(' ') || lines[blockEndIndex].startsWith('\t'))) {
+                       blockBody.push(lines[blockEndIndex].trim());
+                       blockEndIndex++;
+                    }
+
+                    while(this.evaluateExpression(conditionExpr)) {
+                        this._executeBlock(blockBody);
+                        if (this.loopState === 'break') { this.loopState = null; break; }
+                        if (this.loopState === 'continue') { this.loopState = null; continue; }
+                    }
+                    i = blockEndIndex;
+                }
+                
+                // loop for in
+                else if (line.startsWith('for')) {
+                    const match = line.match(/for\s+(\w+)\s+in\s+(\w+)\s*:/);
+                    if (!match) throw new Error("Sintaxe 'for' inválida. Use: for var in lista:");
+                    const [, varName, listName] = match;
+                    const list = this.vars[listName];
+                    if (!Array.isArray(list)) throw new Error(`'${listName}' não é uma lista.`);
+                    
+                    const loopStartIndex = i + 1;
+                    const blockBody = [];
+                    let blockEndIndex = loopStartIndex;
+                    while(blockEndIndex < lines.length && (lines[blockEndIndex].startsWith(' ') || lines[blockEndIndex].startsWith('\t'))) {
+                       blockBody.push(lines[blockEndIndex].trim());
+                       blockEndIndex++;
+                    }
+
+                    for(const item of list) {
+                        this._executeBlock(blockBody, { [varName]: item });
+                        if (this.loopState === 'break') { this.loopState = null; break; }
+                        if (this.loopState === 'continue') { this.loopState = null; continue; }
+                    }
+                    i = blockEndIndex;
+                }
+                
+                // loop repeat until
+                else if (line.startsWith('repeat')) {
+                    const { block, endIndex } = this.readBlock(lines, i);
+                    const untilLine = lines[endIndex + 1]?.trim();
+                    const match = untilLine?.match(/until\s*\((.*)\)/);
+                    if (!match) throw new Error("Sintaxe 'repeat' inválida. Faltando 'until (condicao)' após o bloco.");
+                    const conditionExpr = match[1];
+                    
+                    do {
+                        this._executeBlock(block);
+                        if (this.loopState === 'break') { this.loopState = null; break; }
+                        if (this.loopState === 'continue') { this.loopState = null; continue; }
+                    } while(!this.evaluateExpression(conditionExpr));
+
+                    i = endIndex + 2;
+                }
+
+                // tratamento de Erros
+                else if (line.startsWith('try')) {
+                    const { block: tryBlock, endIndex: tryEnd } = this.readBlock(lines, i);
+                    let catchBlock = null, finallyBlock = null;
+                    let currentIndex = tryEnd + 1;
+
+                    if (lines[currentIndex]?.trim().startsWith('catch')) {
+                        const { block, endIndex } = this.readBlock(lines, currentIndex);
+                        catchBlock = block;
+                        currentIndex = endIndex + 1;
+                    }
+                    if (lines[currentIndex]?.trim().startsWith('finally')) {
+                        const { block, endIndex } = this.readBlock(lines, currentIndex);
+                        finallyBlock = block;
+                        currentIndex = endIndex + 1;
+                    }
+
+                    try {
+                        this._executeBlock(tryBlock);
+                    } catch (e) {
+                        if (catchBlock) {
+                            this._executeBlock(catchBlock);
+                        } else {
+                            throw e; // re-throw if no catch block
+                        }
+                    } finally {
+                        if (finallyBlock) {
+                            this._executeBlock(finallyBlock);
+                        }
+                    }
+                    i = currentIndex;
+                }
+                
+                else {
+                    const funcCallMatch = line.match(/^(\w+)\s*\((.*)\)\s*$/);
+                    const assignmentMatch = line.match(/^(\w+)\s*=\s*(.*)/);
+
+                    if (funcCallMatch && this.funcs[funcCallMatch[1]]) {
+                        this._executeFunctionCall(funcCallMatch[1], funcCallMatch[2]);
+                    } else if (assignmentMatch && this.vars.hasOwnProperty(assignmentMatch[1])) {
+                       const [, name, expr] = assignmentMatch;
+                       this.vars[name] = this.evaluateExpression(expr);
+                    } else {
+                        throw new Error(`Comando ou sintaxe não reconhecida: "${line}"`);
+                    }
+                    i++;
+                }
+
+            } catch (e) {
+                this.log(`Linha ${currentLineIndex + 1}: ${e.message}`, 'error');
+                break;
+            }
+        }
+        return this.output;
+      }
+    }
+
+    // =======================================================
+    // 🎨 LÓGICA DA UI (EDITOR, HIGHLIGHTING, AUTOCOMPLETE)
+    // =======================================================
+    const textarea = document.getElementById('code');
+    const highlightingLayer = document.getElementById('highlighting-layer');
+    const outputEl = document.getElementById('output');
+    const autocompleteEl = document.getElementById('autocomplete');
+
+    const keywords = [
+        "let", "func", "print", "if", "else", "loop", "return", 
+        "while", "for", "in", "repeat", "until", 
+        "and", "or", "not", "break", "continue",
+        "try", "catch", "finally"
+    ];
+    const builtInFuncs = ["sqrt", "abs", "round", "floor", "ceil", "sin", "cos", "tan", "input"];
+    const allSuggestions = [...new Set([...keywords, ...builtInFuncs])]; // usar Set pra garantir unicidade
+    let autocompleteIndex = 0;
+
+    function runInterpreter() {
+        outputEl.innerHTML = ''; // limpa a saída anterior
+        const code = textarea.value;
+        const interpreter = new Interpreter();
+        const result = interpreter.run(code);
+        outputEl.innerHTML = result;
+    }
+
+    function onCodeInput() {
+      updateHighlighting();
+      handleAutocomplete();
+    }
+    
+    function onCodeScroll() {
+      highlightingLayer.scrollTop = textarea.scrollTop;
+      highlightingLayer.scrollLeft = textarea.scrollLeft;
+    }
+    
+    function updateHighlighting() {
+        let code = textarea.value;
+        code = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        const placeholders = [];
+        code = code.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, (match) => {
+            placeholders.push(`<span class="hl-string">${match}</span>`);
+            return `__PLACEHOLDER_${placeholders.length - 1}__`;
+        });
+        code = code.replace(/(\/\/.*)/g, (match) => {
+            placeholders.push(`<span class="hl-comment">${match}</span>`);
+            return `__PLACEHOLDER_${placeholders.length - 1}__`;
+        });
+
+        const keywordRegex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'g');
+        code = code.replace(keywordRegex, '<span class="hl-keyword">$1</span>');
+        code = code.replace(/\b(let)\b/g, '<span class="hl-let">$1</span>'); // 'let' pode ter cor própria
+        code = code.replace(/\b(\d+(\.\d+)?)\b/g, '<span class="hl-number">$1</span>');
+        code = code.replace(/(\w+)\s*(?=\()/g, '<span class="hl-function-call">$1</span>');
+        
+        code = code.replace(/__PLACEHOLDER_(\d+)__/g, (_, index) => placeholders[index]);
+
+        highlightingLayer.innerHTML = code + '\n';
+        onCodeScroll();
+    }
+    
+    function getCursorXY() {
+        const helper = document.getElementById('cursor-helper') || document.createElement('div');
+        helper.id = 'cursor-helper';
+        document.body.appendChild(helper);
+        const textareaStyles = window.getComputedStyle(textarea);
+        
+        ['font', 'letterSpacing', 'lineHeight', 'padding', 'border', 'width'].forEach(prop => {
+            helper.style[prop] = textareaStyles[prop];
+        });
+        helper.style.position = 'absolute';
+        helper.style.visibility = 'hidden';
+        helper.style.whiteSpace = 'pre-wrap';
+
+        const textUpToCursor = textarea.value.substring(0, textarea.selectionStart);
+        helper.textContent = textUpToCursor;
+
+        const span = document.createElement('span');
+        span.textContent = '.';
+        helper.appendChild(span);
+
+        const x = span.offsetLeft;
+        const y = span.offsetTop;
+        
+        helper.textContent = '';
+        return { x, y };
+    }
+
+    function handleAutocomplete() {
+        const textUpToCursor = textarea.value.substring(0, textarea.selectionStart);
+        const currentWordMatch = textUpToCursor.match(/(\w+)$/);
+        
+        if (!currentWordMatch) {
+            autocompleteEl.style.display = 'none';
+            return;
+        }
+
+        const currentWord = currentWordMatch[1];
+        const suggestions = allSuggestions.filter(k => k.startsWith(currentWord));
+
+        if (suggestions.length === 0 || currentWord.length === 0 || (suggestions.length === 1 && suggestions[0] === currentWord)) {
+            autocompleteEl.style.display = 'none';
+            return;
+        }
+
+        autocompleteIndex = 0;
+        autocompleteEl.innerHTML = suggestions.map((s, idx) => 
+            `<div class="${idx === 0 ? 'selected' : ''}" onclick="selectAutocompleteItem('${s}', '${currentWord}')">${s}</div>`
+        ).join('');
+        
+        const { x, y } = getCursorXY();
+        const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight);
+        
+        autocompleteEl.style.display = 'block';
+        autocompleteEl.style.left = `${textarea.offsetLeft + x - textarea.scrollLeft}px`;
+        autocompleteEl.style.top = `${textarea.offsetTop + y - textarea.scrollTop + lineHeight}px`;
+    }
+
+    function selectAutocompleteItem(suggestion, wordToReplace) {
+        const start = textarea.selectionStart - wordToReplace.length;
+        textarea.setRangeText(suggestion, start, textarea.selectionStart, 'end');
+        autocompleteEl.style.display = 'none';
+        textarea.focus();
+        onCodeInput();
+    }
+    
+function onCodeKeyDown(e) {
+  const isAutocompleteVisible = autocompleteEl.style.display === 'block';
+  const options = autocompleteEl.querySelectorAll('div');
+
+	if (e.ctrlKey && e.code === 'Space') {
+		e.preventDefault();
+		handleAutocomplete();
+		return;
+	}
+
+  // se o autocomplete estiver aberto
+  if (isAutocompleteVisible) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      autocompleteIndex = (autocompleteIndex + 1) % options.length;
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      autocompleteIndex = (autocompleteIndex - 1 + options.length) % options.length;
+    } else if (e.ctrlKey && e.key === 'Enter') {
+      // confirma seleção
+      e.preventDefault();
+      if (options.length > 0) {
+        options[autocompleteIndex].click();
+      }
+    } else if (e.key === 'Escape') {
+      // fecha o menu
+      autocompleteEl.style.display = 'none';
+      return;
+    }
+
+    // atualiza visual
+    options.forEach((opt, idx) =>
+      opt.classList.toggle('selected', idx === autocompleteIndex)
+    );
+  }
+
+  // se o usuário digitar algo normal e o autocomplete estiver fechado,
+  // verificar se é hora de sugerir algo automaticamente
+  if (!isAutocompleteVisible && /^[a-zA-Z.]$/.test(e.key)) {
+    clearTimeout(window._autocompleteTimer);
+    window._autocompleteTimer = setTimeout(() => {
+      handleAutocomplete();
+    }, 150);
+  }
+}
+
+
+    document.addEventListener('DOMContentLoaded', () => { updateHighlighting(); });
+  </script>
+</body>
+</html>
